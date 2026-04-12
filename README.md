@@ -7,7 +7,7 @@
 ## ♛ chtext
 *Classical Chinese Quote Generator*
 
-*3D3Q3*
+**3D3Q3**
 ---
 
 
