@@ -189,5 +189,6 @@ See the [LICENSE](https://www.google.com/search?q=LICENSE) file for full details
   - English translations powered by [Google Translate](https://translate.google.com/) via [deep-translator](https://github.com/nidhaloff/deep-translator).
 
 
-♛  3 D 3 Q 3  ♛  2 0 2 6  ♛
----
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   3 D 3 Q 3  |  2 0 2 6 ♛
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━
