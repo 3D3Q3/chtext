@@ -160,9 +160,18 @@ For access to the full library:
 
 ## License
 
-[MIT](LICENSE)
+This tool's source code is released under the [MIT License](LICENSE).
+
+**Important:** The classical Chinese texts retrieved through this tool come from the [Chinese Text Project](https://ctext.org) and are licensed under [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/). This means the text content:
+
+- Requires attribution to [ctext.org](https://ctext.org)
+- May only be used for **non-commercial** purposes
+- Must be shared under the same license if redistributed
+
+See the [LICENSE](LICENSE) file for full details on both the code and data licenses.
 
 ## Acknowledgments
 
-- [Chinese Text Project (ctext.org)](https://ctext.org) - The comprehensive database of classical Chinese texts that makes this tool possible
-- Created by Donald Sturgeon, the Chinese Text Project is a freely accessible digital library of pre-modern Chinese texts
+- **[Chinese Text Project (ctext.org)](https://ctext.org)** - The comprehensive open-access digital library of pre-modern Chinese texts that makes this tool possible. Created and maintained by [Donald Sturgeon](https://dsturgeon.net/).
+- Text data provided under [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/) by the Chinese Text Project.
+- English translations powered by [Google Translate](https://translate.google.com/) via [deep-translator](https://github.com/nidhaloff/deep-translator).
