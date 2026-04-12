@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
 """
-Ctext.org Chinese Classics Quote CLI v3.0
+chtext - Classical Chinese Text Quote Generator
 
-A professional command-line tool for retrieving classical Chinese texts
-from the Chinese Text Project using the official ctext Python library.
-
-Features:
-- Random/unique quote retrieval with translation
-- Text search functionality  
-- Book/chapter browsing
-- Download texts to file
-- API status and configuration
+Command-line tool for retrieving and translating short quotes from
+classical Chinese texts via the Chinese Text Project (ctext.org) API.
 """
+
+__version__ = "1.0.0"
 
 import argparse
 import hashlib
@@ -762,7 +757,7 @@ def cmd_list(args, fetcher: QuoteFetcher):
 
     print("\n" + "=" * 60)
     print(f"\nUse --book <key> to select a specific book.")
-    print(f"Example: python main.py random --book analects")
+    print(f"Example: chtext generate --book analects")
     return 0
 
 
@@ -1096,29 +1091,31 @@ def cmd_generate(args, fetcher: QuoteFetcher):
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        prog="ctext",
-        description="Chinese Classics Quote CLI v3.0 - Retrieve wisdom from classical Chinese texts",
+        prog="chtext",
+        description="chtext - Classical Chinese Text Quote Generator",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples:
-  python main.py generate                          Get one short English quote
-  python main.py generate --book dao-de-jing       Short quote from Dao De Jing
-  python main.py generate --count 20               Generate 20 short English quotes to file
-  python main.py generate --count 50 --with-chinese  Include Chinese text
-  python main.py random                            Get a random quote from any book
-  python main.py random --book dao-de-jing         Get a quote from Dao De Jing
-  python main.py unique                            Get a quote you haven't seen before
-  python main.py batch --count 10                  Generate 10 unique quotes to file
-  python main.py search --query "仁"               Search for passages containing "仁"
-  python main.py browse analects                   Explore the Analects structure
-  python main.py download analects                 Download the Analects to a file
-  python main.py list                              Show available books
-  python main.py stats                             Show your quote history
-  python main.py status                            Show API status
-  python main.py config --show                     Show configuration
+examples:
+  chtext generate                          Get one short English quote
+  chtext generate --book dao-de-jing       Short quote from Dao De Jing
+  chtext generate --count 20               Generate 20 quotes to a file
+  chtext generate --with-chinese           Include original Chinese text
+  chtext random                            Random quote (full paragraph)
+  chtext random --book analects            Random Analects quote
+  chtext list                              Show all available books
+  chtext search --query "仁"               Search for a Chinese term
+  chtext browse analects                   Explore book structure
+  chtext config --set-apikey YOUR_KEY      Unlock all books with an API key
+
+full documentation: https://github.com/3D3Q3/chtext
         """
     )
-    
+
+    parser.add_argument(
+        "-V", "--version",
+        action="version",
+        version=f"%(prog)s {__version__}"
+    )
     parser.add_argument(
         "-v", "--verbose",
         action="store_true",

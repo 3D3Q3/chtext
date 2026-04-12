@@ -1,182 +1,168 @@
-# Ctext.org Chinese Classics CLI v3.0
+# chtext
 
-A professional command-line tool for retrieving classical Chinese texts from the Chinese Text Project (ctext.org) with English translations.
+A command-line tool for generating short, quotable English translations from classical Chinese texts. Powered by the [Chinese Text Project](https://ctext.org) API.
+
+```
+$ chtext generate
+"Knowing the male and guarding the female are the streams of the world."
+  -- Dao De Jing (道德經), 道德經
+```
 
 ## Features
 
-- 🎲 **Random quotes** from classical Chinese texts
-- 🔖 **Unique quotes** tracking (never see the same quote twice)
-- 🔍 **Search** texts by content
-- 📚 **Browse** book structure and chapters
-- ⬇️ **Download** full texts to file
-- 📊 **Statistics** on your reading history
-- ⚙️ **Configuration** for API key and preferences
-- 🌐 **Automatic translation** via Google Translate
+- **Short quote generator** - Extracts concise 1-3 sentence passages, not long paragraphs
+- **English-first output** - Translations via Google Translate, with optional Chinese metadata
+- **19 classical texts** - Analects, Dao De Jing, Mengzi, Mozi, Art of War, and more
+- **Duplicate tracking** - SQLite-backed history so you never see the same quote twice
+- **Batch export** - Generate dozens of quotes to a file in one command
+- **Multiple formats** - Plain text, JSON, or full annotated output
+- **Cross-platform** - Works on macOS, Linux, and Windows
 
 ## Installation
 
+### pip (recommended)
+
 ```bash
-# Clone or copy the project
-cd CHTEXT
+pip install git+https://github.com/3D3Q3/chtext.git
+```
 
-# Create virtual environment (optional but recommended)
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# or: .\venv\Scripts\activate  # Windows
+After installation the `chtext` command is available globally.
 
-# Install dependencies
-pip install -r requirements.txt
+### From source
+
+```bash
+git clone https://github.com/3D3Q3/chtext.git
+cd chtext
+pip install .
+```
+
+### Without installing
+
+```bash
+git clone https://github.com/3D3Q3/chtext.git
+cd chtext
+pip install requests deep-translator
+python -m chtext generate
 ```
 
 ## Quick Start
 
 ```bash
-# Get a random quote with translation
-python main.py random
+# Get a short English quote from a random classical text
+chtext generate
 
-# Get a quote from a specific book
-python main.py random --book dao-de-jing
+# Quote from a specific book
+chtext generate --book dao-de-jing
 
-# Get a unique quote (tracks seen quotes)
-python main.py unique
+# Include the original Chinese text
+chtext generate --with-chinese
 
-# List all available books
-python main.py list
+# Generate 20 quotes and save to a file
+chtext generate --count 20 --output quotes.txt
+
+# Output as JSON
+chtext generate --format json
+
+# See all available books
+chtext list
 ```
 
 ## Commands
 
-### Core Commands
-
 | Command | Description |
 |---------|-------------|
-| `random` | Get a random quote from any book |
-| `unique` | Get a quote you haven't seen before |
-| `batch` | Generate multiple unique quotes to a file |
-| `list` | List all available books by category |
-| `stats` | Show your quote history statistics |
+| `generate` | Generate short English quotes (the main feature) |
+| `random` | Get a random full paragraph with translation |
+| `unique` | Get a full paragraph you haven't seen before |
+| `batch` | Export multiple full paragraphs to a file |
+| `list` | List all available books |
+| `search` | Search texts by Chinese keyword |
+| `browse` | Explore a book's chapter structure |
+| `download` | Download a complete text to a file |
+| `stats` | View your quote history |
+| `status` | Check API connection and rate limits |
+| `config` | Manage API key and preferences |
 
-### New Commands (v3.0)
+### generate
 
-| Command | Description |
-|---------|-------------|
-| `search` | Search for passages containing specific text |
-| `browse` | Explore book structure and chapters |
-| `download` | Download full text of a book to file |
-| `status` | Show API status and rate limit info |
-| `config` | Manage API key and settings |
-
-## Usage Examples
-
-### Random Quotes
+The primary command. Fetches passages from the ctext.org API, splits long paragraphs into individual sentences, filters for short quotable passages, and translates them to English.
 
 ```bash
-# Random quote from any book
-python main.py random
+# Single quote
+chtext generate
 
-# From a specific book, no translation
-python main.py random --book analects --no-translate
+# From a specific book
+chtext generate --book analects
 
-# Output as JSON
-python main.py random --format json
+# Batch to file
+chtext generate --count 50 --output my_quotes.txt
+
+# With Chinese text shown below each translation
+chtext generate --count 10 --with-chinese
+
+# JSON output (useful for programmatic consumption)
+chtext generate --format json
 ```
 
-### Search
+### config
 
 ```bash
-# Search for "仁" (benevolence) in all texts
-python main.py search --query "仁"
+# View current settings
+chtext config --show
 
-# Search within the Analects only
-python main.py search --query "君子" --book analects
+# Set an API key to unlock all books
+chtext config --set-apikey YOUR_KEY
 
-# Show more results
-python main.py search --query "道" --limit 20
-```
+# Use simplified Chinese characters
+chtext config --set-remap gb
 
-### Browse
-
-```bash
-# See chapter structure of a book
-python main.py browse analects
-
-# See more chapters
-python main.py browse shijing --limit 50
-```
-
-### Download
-
-```bash
-# Download full text (as paragraphs)
-python main.py download dao-de-jing
-
-# Download as continuous string
-python main.py download analects --format string
-
-# Specify output file
-python main.py download mengzi --output mengzi_full.txt
-```
-
-### Batch Generation
-
-```bash
-# Generate 10 unique quotes
-python main.py batch --count 10
-
-# From specific book, as JSON
-python main.py batch --count 5 --book zhuangzi --format json
-```
-
-### Configuration
-
-```bash
-# Show current config
-python main.py config --show
-
-# Set API key (when you have one)
-python main.py config --set-apikey YOUR_API_KEY
-
-# Set language (en/zh)
-python main.py config --set-language zh
-
-# Use simplified Chinese
-python main.py config --set-remap gb
+# Set default book for random/generate
+chtext config --set-default-book analects
 ```
 
 ## Available Books
 
-The CLI includes 24+ classical Chinese texts organized by category:
+Five classical texts are available without an API key:
 
-- **Confucian Classics**: Analects, Mengzi, Xunzi, Great Learning, Doctrine of the Mean
-- **Daoist Texts**: Dao De Jing, Zhuangzi, Liezi
-- **Legalist & Military**: Han Feizi, Art of War, Book of Lord Shang
-- **Mohist**: Mozi
-- **Five Classics**: I Ching, Book of Odes, Book of Rites, Zuo Zhuan, Book of Documents
-- **Historical**: Records of Grand Historian, Strategies of Warring States
-- **Other Philosophy**: Guanzi, Yanzi Chunqiu, Lüshi Chunqiu, Huainanzi
+| Key | Text |
+|-----|------|
+| `analects` | The Analects (論語) |
+| `mengzi` | Mengzi (孟子) |
+| `dao-de-jing` | Dao De Jing (道德經) |
+| `mozi` | Mozi (墨子) |
+| `book-of-poetry` | Book of Poetry (詩經) |
 
-Run `python main.py list` to see the full categorized list.
+With a [ctext.org API key](https://ctext.org/tools/subscribe), 14 additional texts are unlocked including Zhuangzi, Art of War, Han Feizi, Book of Rites, Records of the Grand Historian, and more. Run `chtext list` for the full catalog.
 
 ## API Key
 
-The app works without an API key but with rate limitations. For extended access:
+The tool works immediately without any API key. The free tier gives access to five major texts, which contain thousands of quotable passages.
 
-1. Create an account at [ctext.org](https://ctext.org)
-2. For API keys, see [ctext.org/tools/subscribe](https://ctext.org/tools/subscribe)
-3. Set your key: `python main.py config --set-apikey YOUR_KEY`
+For access to the full library:
 
-## Dependencies
+1. Visit [ctext.org/tools/subscribe](https://ctext.org/tools/subscribe)
+2. Register for an API key
+3. Set it: `chtext config --set-apikey YOUR_KEY`
 
-- `ctext` - Official Chinese Text Project Python library
-- `requests` - HTTP requests  
-- `deep-translator` - Google Translate wrapper
+## How It Works
 
-## Resources
+1. Fetches text data from the [ctext.org API](https://ctext.org/tools/api)
+2. Navigates book structure (books → chapters → paragraphs)
+3. Splits long paragraphs into sentences using Chinese punctuation boundaries (。！？)
+4. Filters for short, quotable passages (under ~80 characters)
+5. Translates to English via Google Translate
+6. Tracks seen quotes in a local SQLite database to avoid duplicates
 
-- [ctext.org](https://ctext.org) - Chinese Text Project
-- [API Documentation](https://ctext.org/tools/api)
-- [Digital Sinology Tutorials](https://digitalsinology.org/classical-chinese-digital-humanities/)
+## Requirements
+
+- Python 3.8+
+- Internet connection (for the ctext.org API and Google Translate)
 
 ## License
 
-MIT License - Educational and research use encouraged.
+[MIT](LICENSE)
+
+## Acknowledgments
+
+- [Chinese Text Project (ctext.org)](https://ctext.org) - The comprehensive database of classical Chinese texts that makes this tool possible
+- Created by Donald Sturgeon, the Chinese Text Project is a freely accessible digital library of pre-modern Chinese texts

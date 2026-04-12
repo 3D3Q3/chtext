@@ -1,1 +1,36 @@
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# App runtime files
+seen_ids.sqlite
+*.sqlite
+
+# Generated output
+quotes_*.txt
+english_quotes_*.txt
+
+# Config (may contain API keys)
+.ctext_config.json
