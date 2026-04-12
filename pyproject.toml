@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "chtext"
 version = "1.0.0"
-description = "Classical Chinese text quote generator powered by the Chinese Text Project (ctext.org)"
+description = "Command-line tool for retrieving and translating short quotes from classical Chinese texts via the Chinese Text Project (ctext.org) API."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.8"
@@ -35,7 +35,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/3D3Q3/chtext"
+Homepage = "https://3D3Q3.3ll3.org/chtext"
 Repository = "https://github.com/3D3Q3/chtext"
 Issues = "https://github.com/3D3Q3/chtext/issues"
 
