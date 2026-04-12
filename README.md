@@ -4,7 +4,7 @@
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 
-## ♛ chtext
+*** ♛ chtext***
 **Classical Chinese Quote Generator**
 
 *Architect:* 3D3Q3
