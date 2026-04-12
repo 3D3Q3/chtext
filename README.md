@@ -6,8 +6,8 @@
 
 ## ♛ chtext
 
-*Architect:** 3D3Q3
-*Domain:** Ancient Wisdom & Terminal Utilities  
+*Architect:* 3D3Q3
+*Domain:* Ancient Wisdom & Terminal Utilities  
 
 
 ## ⚡️ Objective
