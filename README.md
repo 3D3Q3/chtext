@@ -1,15 +1,14 @@
+---
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
    ♉︎ T A O W  |  3 D 3 Q 3
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 
----
 ### ♛ chtext
 *Classical Chinese Quote Generator*
 
-
-**Architect:** 3D3Q3
+***Architect:*** 3D3Q3
 **Domain:** Ancient Wisdom & Terminal Utilities  
 ---
 
