@@ -1,9 +1,19 @@
 #!/usr/bin/env python3
 """
-chtext - Classical Chinese Text Quote Generator
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+   ♛  3 L L 3 L L C  |  3 D 3 Q 3
+      ───────────────────────────
+      D U B I T O  E R G O  F I O  ♛
+      ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+
+▄ chtext ▄ - A command-line gateway to antiquity.
+▄ Architect ▄ - 3D3Q3
+▄ Domain ▄ - Ancient Wisdom & Terminal Utilities.
 
 Command-line tool for retrieving and translating short quotes from
 classical Chinese texts via the Chinese Text Project (ctext.org) API.
+
+3D3Q3 | 2026
 """
 
 __version__ = "1.0.0"
