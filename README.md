@@ -11,7 +11,7 @@
 
 
 
-### ⚡️ Objective
+## ⚡️ Objective
 
 A command-line gateway to antiquity. `chtext` distills millennia of philosophical insight into short, quotable English translations from classical Chinese texts, delivering them directly to your terminal. Powered by the [Chinese Text Project](https://ctext.org) API, it parses dense historical paragraphs to extract concise, impactful wisdom. Useful, straightforward, and timeless. Needed transmission of ancient knowledge and the ctext tools were beyond my comprehension, apparently.
 
