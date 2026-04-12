@@ -4,13 +4,10 @@
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 
----
-# ♛ chtext
-**Architect:** Andrew Stillwell  
-**Domain:** Ancient Wisdom & Terminal Utilities  
-**Date:** 2026-04-11  
-**Status:** Deployed
----
+## ♛ chtext
+
+*Architect:** 3D3Q3
+*Domain:** Ancient Wisdom & Terminal Utilities  
 
 
 ## ⚡️ Objective
@@ -193,3 +190,4 @@ See the [LICENSE](https://www.google.com/search?q=LICENSE) file for full details
 
 
 ♛  3 D 3 Q 3  ♛  2 0 2 6  ♛
+---
