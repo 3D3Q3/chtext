@@ -9,7 +9,7 @@
 *Classical Chinese Quote Generator*
 
 
-## ⚡️ Objective
+### ⚡️ Objective
 
 A command-line gateway to antiquity. `chtext` distills millennia of philosophical insight into short, quotable English translations from classical Chinese texts, delivering them directly to your terminal. Powered by the [Chinese Text Project](https://ctext.org) API, it parses dense historical paragraphs to extract concise, impactful wisdom. Useful, straightforward, and timeless. Needed transmission of ancient knowledge and the ctext tools were beyond my comprehension, apparently.
 
@@ -19,7 +19,7 @@ $ chtext generate
   -- Dao De Jing (道德經), 道德經
 ````
 
-## 📐 Core Features
+### 📐 Core Features
 
   - **Short quote generator** - Extracts concise 1-3 sentence passages, not long paragraphs
   - **English-first output** - Translations via Google Translate, with optional Chinese metadata
@@ -29,9 +29,9 @@ $ chtext generate
   - **Multiple formats** - Plain text, JSON, or full annotated output
   - **Cross-platform** - Works on macOS, Linux, and Windows
 
-## Installation
+### Installation
 
-### pip (recommended)
+#### pip (recommended)
 
 ```bash
 pip install git+[https://github.com/3D3Q3/chtext.git](https://github.com/3D3Q3/chtext.git)
@@ -39,7 +39,7 @@ pip install git+[https://github.com/3D3Q3/chtext.git](https://github.com/3D3Q3/c
 
 After installation the `chtext` command is available globally.
 
-### From source
+#### From source
 
 ```bash
 git clone [https://github.com/3D3Q3/chtext.git](https://github.com/3D3Q3/chtext.git)
@@ -47,7 +47,7 @@ cd chtext
 pip install .
 ```
 
-### Without installing
+#### Without installing
 
 ```bash
 git clone [https://github.com/3D3Q3/chtext.git](https://github.com/3D3Q3/chtext.git)
@@ -56,7 +56,7 @@ pip install requests deep-translator
 python -m chtext generate
 ```
 
-## Quick Start
+### Quick Start
 
 ```bash
 # Get a short English quote from a random classical text
@@ -78,7 +78,7 @@ chtext generate --format json
 chtext list
 ```
 
-## Commands
+### Commands
 
 | Command | Description |
 |---------|-------------|
@@ -94,7 +94,7 @@ chtext list
 | `status` | Check API connection and rate limits |
 | `config` | Manage API key and preferences |
 
-### generate
+#### generate
 
 The primary command. Fetches passages from the ctext.org API, splits long paragraphs into individual sentences, filters for short quotable passages, and translates them to English.
 
@@ -115,7 +115,7 @@ chtext generate --count 10 --with-chinese
 chtext generate --format json
 ```
 
-### config
+#### config
 
 ```bash
 # View current settings
@@ -131,7 +131,7 @@ chtext config --set-remap gb
 chtext config --set-default-book analects
 ```
 
-## Available Books
+### Available Books
 
 Five classical texts are available without an API key:
 
@@ -145,7 +145,7 @@ Five classical texts are available without an API key:
 
 With a [ctext.org API key](https://ctext.org/tools/subscribe), 14 additional texts are unlocked including Zhuangzi, Art of War, Han Feizi, Book of Rites, Records of the Grand Historian, and more. Run `chtext list` for the full catalog.
 
-## API Key
+### API Key
 
 The tool works immediately without any API key. The free tier gives access to five major texts, which contain thousands of quotable passages.
 
@@ -155,7 +155,7 @@ For access to the full library:
 2.  Register for an API key
 3.  Set it: `chtext config --set-apikey YOUR_KEY`
 
-## How It Works
+### How It Works
 
 1.  Fetches text data from the [ctext.org API](https://ctext.org/tools/api)
 2.  Navigates book structure (books → chapters → paragraphs)
@@ -164,12 +164,12 @@ For access to the full library:
 5.  Translates to English via Google Translate
 6.  Tracks seen quotes in a local SQLite database to avoid duplicates
 
-## Requirements
+### Requirements
 
   - Python 3.8+
   - Internet connection (for the ctext.org API and Google Translate)
 
-## License
+### License
 
 This tool's source code is released under the [MIT License](https://www.google.com/search?q=LICENSE).
 
@@ -181,7 +181,7 @@ This tool's source code is released under the [MIT License](https://www.google.c
 
 See the [LICENSE](https://www.google.com/search?q=LICENSE) file for full details on both the code and data licenses.
 
-## Acknowledgments
+### Acknowledgments
 
   - **[Chinese Text Project (ctext.org)](https://ctext.org)** - The comprehensive open-access digital library of pre-modern Chinese texts that makes this tool possible. Created and maintained by [Donald Sturgeon](https://dsturgeon.net/).
   - Text data provided under [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/) by the Chinese Text Project.
