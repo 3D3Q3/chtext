@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
 """
-Ctext.org Chinese Classics Quote CLI v3.0
+chtext - Classical Chinese Text Quote Generator
 
-A professional command-line tool for retrieving classical Chinese texts
-from the Chinese Text Project using the official ctext Python library.
-
-Features:
-- Random/unique quote retrieval with translation
-- Text search functionality  
-- Book/chapter browsing
-- Download texts to file
-- API status and configuration
+Command-line tool for retrieving and translating short quotes from
+classical Chinese texts via the Chinese Text Project (ctext.org) API.
 """
+
+__version__ = "1.0.0"
 
 import argparse
 import hashlib
@@ -30,11 +25,93 @@ if sys.platform == 'win32':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
+import re
+
 import requests
 from deep_translator import GoogleTranslator
 
-# Import official ctext library
-import ctext as ctlib
+# --- Direct API client for ctext.org (replaces broken 'ctext' package) ---
+
+class CTextAPI:
+    """Direct HTTP client for the Chinese Text Project API (api.ctext.org).
+    Replaces the 'ctext' PyPI package which has build issues."""
+
+    def __init__(self):
+        self.base = "https://api.ctext.org"
+        self.session = requests.Session()
+        self.apikey = ""
+        self.language = ""
+        self.remap = ""
+
+    def _build_params(self):
+        params = {}
+        if self.apikey:
+            params["apikey"] = self.apikey
+        if self.language:
+            params["if"] = self.language
+        if self.remap:
+            params["remap"] = self.remap
+        return params
+
+    def _call(self, endpoint, extra_params=None):
+        params = self._build_params()
+        if extra_params:
+            params.update(extra_params)
+        resp = self.session.get(f"{self.base}/{endpoint}", params=params, timeout=30)
+        if not resp.text.strip():
+            raise CtextAPIError("Empty response from API (possible rate limit)")
+        data = resp.json()
+        if "error" in data:
+            code = data["error"].get("code", "")
+            desc = data["error"].get("description", "")
+            if "authentication" in code.lower() or "authentication" in desc.lower():
+                raise CtextAuthError(f"This text requires an API key. Get one at https://ctext.org/tools/subscribe")
+            raise CtextAPIError(f"API Error [{code}]: {desc}")
+        return data
+
+    def gettext(self, urn):
+        return self._call("gettext", {"urn": urn})
+
+    def searchtexts(self, title):
+        return self._call("searchtexts", {"title": title})
+
+    def getstatus(self):
+        return self._call("getstatus")
+
+    def gettextinfo(self, urn):
+        return self._call("gettextinfo", {"urn": urn})
+
+    def gettextasstring(self, urn):
+        data = self.gettext(urn)
+        result = ""
+        if "subsections" in data:
+            for sub in data["subsections"]:
+                result += self.gettextasstring(sub)
+        if "fulltext" in data:
+            for para in data["fulltext"]:
+                result += para + "\n\n"
+        return result
+
+    def gettextasparagraphlist(self, urn):
+        text = self.gettextasstring(urn)
+        parts = re.split(r"\n+", text)
+        if parts and parts[-1] == "":
+            parts.pop()
+        return parts
+
+    def setapikey(self, key):
+        self.apikey = key
+
+    def setlanguage(self, lang):
+        self.language = lang
+
+    def setremap(self, remap):
+        self.remap = remap
+
+
+# Shared API instance (replaces the ctext module-level globals)
+ctapi = CTextAPI()
+
 
 # --- Configuration & Constants ---
 DB_FILE = "seen_ids.sqlite"
@@ -42,49 +119,44 @@ CONFIG_FILE = Path.home() / ".ctext_config.json"
 REQUEST_DELAY = 1.0  # Seconds between API requests to respect rate limits
 MAX_RETRIES = 15     # Maximum retries for unique quote finding
 
-# Available books with their display names - expanded list
-AVAILABLE_BOOKS = {
-    # Confucian Classics
+# Books available without an API key (free tier)
+FREE_BOOKS = {
     "analects": ("ctp:analects", "The Analects (論語)"),
     "mengzi": ("ctp:mengzi", "Mengzi (孟子)"),
-    "xunzi": ("ctp:xunzi", "Xunzi (荀子)"),
-    "daxue": ("ctp:daxue", "Great Learning (大學)"),
-    "zhongyong": ("ctp:zhongyong", "Doctrine of the Mean (中庸)"),
-    
-    # Daoist Texts
     "dao-de-jing": ("ctp:dao-de-jing", "Dao De Jing (道德經)"),
+    "mozi": ("ctp:mozi", "Mozi (墨子)"),
+    "book-of-poetry": ("ctp:book-of-poetry", "Book of Poetry / Shijing (詩經)"),
+}
+
+# Books that require a ctext.org API key
+AUTH_BOOKS = {
+    "xunzi": ("ctp:xunzi", "Xunzi (荀子)"),
     "zhuangzi": ("ctp:zhuangzi", "Zhuangzi (莊子)"),
     "liezi": ("ctp:liezi", "Liezi (列子)"),
-    
-    # Legalist & Military
     "hanfeizi": ("ctp:hanfeizi", "Han Feizi (韓非子)"),
     "art-of-war": ("ctp:art-of-war", "Art of War (孫子兵法)"),
-    "shangjunshu": ("ctp:shangjunshu", "Book of Lord Shang (商君書)"),
-    
-    # Mohist
-    "mozi": ("ctp:mozi", "Mozi (墨子)"),
-    
-    # Classics
-    "yijing": ("ctp:yijing", "I Ching / Book of Changes (易經)"),
-    "shijing": ("ctp:shijing", "Book of Odes/Poetry (詩經)"),
+    "shang-jun-shu": ("ctp:shang-jun-shu", "Book of Lord Shang (商君書)"),
     "liji": ("ctp:liji", "Book of Rites (禮記)"),
-    "chunqiu-zuozhuan": ("ctp:chunqiu-zuozhuan", "Zuo Zhuan (左傳)"),
-    "shujing": ("ctp:shujing", "Book of Documents (尚書)"),
-    
-    # Historical Texts
+    "book-of-changes": ("ctp:book-of-changes", "I Ching / Book of Changes (易經)"),
+    "chun-qiu-zuo-zhuan": ("ctp:chun-qiu-zuo-zhuan", "Zuo Zhuan (左傳)"),
     "shiji": ("ctp:shiji", "Records of the Grand Historian (史記)"),
-    "zhanguoce": ("ctp:zhanguoce", "Strategies of the Warring States (戰國策)"),
-    
-    # Other Philosophy  
+    "zhan-guo-ce": ("ctp:zhan-guo-ce", "Strategies of the Warring States (戰國策)"),
     "guanzi": ("ctp:guanzi", "Guanzi (管子)"),
-    "yanzi-chunqiu": ("ctp:yanzi-chunqiu", "Yanzi Chunqiu (晏子春秋)"),
-    "lvshi-chunqiu": ("ctp:lvshi-chunqiu", "Lüshi Chunqiu (呂氏春秋)"),
+    "lv-shi-chun-qiu": ("ctp:lv-shi-chun-qiu", "Lüshi Chunqiu (呂氏春秋)"),
     "huainanzi": ("ctp:huainanzi", "Huainanzi (淮南子)"),
 }
+
+# Combined dict for CLI compatibility (--book accepts any known book)
+AVAILABLE_BOOKS = {**FREE_BOOKS, **AUTH_BOOKS}
 
 
 class CtextAPIError(Exception):
     """Custom exception for API errors."""
+    pass
+
+
+class CtextAuthError(CtextAPIError):
+    """Raised when a text requires authentication."""
     pass
 
 
@@ -124,13 +196,13 @@ class Config:
         self.save()
     
     def apply_to_ctext(self):
-        """Apply configuration to the ctext library."""
+        """Apply configuration to the ctext API client."""
         if self.data.get("api_key"):
-            ctlib.setapikey(self.data["api_key"])
+            ctapi.setapikey(self.data["api_key"])
         if self.data.get("language"):
-            ctlib.setlanguage(self.data["language"])
+            ctapi.setlanguage(self.data["language"])
         if self.data.get("remap"):
-            ctlib.setremap(self.data["remap"])
+            ctapi.setremap(self.data["remap"])
 
 
 class CtextLibWrapper:
@@ -147,26 +219,23 @@ class CtextLibWrapper:
             print(f"[DEBUG] {message}", file=sys.stderr)
 
     def get_text(self, urn: str) -> Dict:
-        """Fetch text data for a given URN using official library."""
+        """Fetch text data for a given URN."""
         self._log(f"Fetching text for URN: {urn}")
-        time.sleep(REQUEST_DELAY)  # Rate limiting
+        time.sleep(REQUEST_DELAY)
         try:
-            result = ctlib.gettext(urn)
-            if isinstance(result, dict) and "error" in result:
-                error = result["error"]
-                raise CtextAPIError(f"API Error [{error.get('code', 'UNKNOWN')}]: {error.get('description', 'No description')}")
+            result = ctapi.gettext(urn)
             return result
-        except Exception as e:
-            if "error" in str(e).lower() or "rate" in str(e).lower():
-                raise CtextAPIError(str(e))
+        except (CtextAuthError, CtextAPIError):
             raise
+        except Exception as e:
+            raise CtextAPIError(str(e))
 
     def get_text_as_paragraphs(self, urn: str) -> List[str]:
         """Get full text as a list of paragraphs."""
         self._log(f"Fetching paragraphs for URN: {urn}")
         time.sleep(REQUEST_DELAY)
         try:
-            result = ctlib.gettextasparagraphlist(urn)
+            result = ctapi.gettextasparagraphlist(urn)
             return result if result else []
         except Exception as e:
             raise CtextAPIError(f"Failed to get paragraphs: {e}")
@@ -176,7 +245,7 @@ class CtextLibWrapper:
         self._log(f"Fetching full text for URN: {urn}")
         time.sleep(REQUEST_DELAY)
         try:
-            result = ctlib.gettextasstring(urn)
+            result = ctapi.gettextasstring(urn)
             return result if result else ""
         except Exception as e:
             raise CtextAPIError(f"Failed to get text: {e}")
@@ -185,7 +254,7 @@ class CtextLibWrapper:
         """Get API status including rate limit info."""
         self._log("Fetching API status")
         try:
-            result = ctlib.getstatus()
+            result = ctapi.getstatus()
             return result if result else {}
         except Exception as e:
             raise CtextAPIError(f"Failed to get status: {e}")
@@ -195,10 +264,8 @@ class CtextLibWrapper:
         self._log(f"Searching for: {query} in {urn or 'all texts'}")
         time.sleep(REQUEST_DELAY)
         try:
-            if urn:
-                result = ctlib.searchtexts(query, urn)
-            else:
-                result = ctlib.searchtexts(query)
+            # ctext API searchtexts only takes a title/query param
+            result = ctapi.searchtexts(query)
             return result if result else []
         except Exception as e:
             raise CtextAPIError(f"Search failed: {e}")
@@ -315,14 +382,15 @@ class QuoteFetcher:
         if self.verbose:
             print(f"[DEBUG] {message}", file=sys.stderr)
 
-    def _get_book_urn(self, book_key: Optional[str]) -> str:
+    def _get_book_urn(self, book_key: Optional[str], free_only: bool = False) -> str:
         """Get the URN for a book by key, or pick a random one."""
         if book_key:
             if book_key not in AVAILABLE_BOOKS:
                 available = ", ".join(AVAILABLE_BOOKS.keys())
                 raise ValueError(f"Unknown book '{book_key}'. Available: {available}")
             return AVAILABLE_BOOKS[book_key][0]
-        return random.choice(list(AVAILABLE_BOOKS.values()))[0]
+        pool = FREE_BOOKS if free_only else AVAILABLE_BOOKS
+        return random.choice(list(pool.values()))[0]
 
     def _generate_unique_id(self, chapter_urn: str, paragraph_index: int, text: str) -> str:
         """Generate a stable unique ID for a paragraph."""
@@ -459,6 +527,139 @@ class QuoteFetcher:
         
         return "\n".join(lines)
 
+    def fetch_short_quote(self, book_key: Optional[str] = None, unique: bool = True,
+                          max_chars: int = 80) -> Optional[Dict]:
+        """Fetch a short quote (1-3 sentences) from a book.
+
+        Splits long paragraphs into individual sentences and filters by length
+        so only concise, quotable passages are returned.
+        """
+        max_attempts = MAX_RETRIES if unique else 5
+
+        for attempt in range(max_attempts):
+            try:
+                book_urn = self._get_book_urn(book_key, free_only=(book_key is None))
+                self._log(f"Short-quote attempt {attempt + 1}: {book_urn}")
+
+                data = self.api.get_text(book_urn)
+
+                # Navigate into subsections if the book has chapters
+                if isinstance(data, dict) and "subsections" in data and data["subsections"]:
+                    chapter_urn = random.choice(data["subsections"])
+                    self._log(f"Selected chapter: {chapter_urn}")
+                    data = self.api.get_text(chapter_urn)
+                elif isinstance(data, dict):
+                    chapter_urn = book_urn
+                else:
+                    chapter_urn = book_urn
+
+                if not isinstance(data, dict) or "fulltext" not in data or not data["fulltext"]:
+                    continue
+
+                title = data.get("title", "Unknown")
+                candidates = _extract_short_segments(data["fulltext"], max_chars)
+
+                if not candidates:
+                    self._log("No short segments found in this chapter")
+                    continue
+
+                random.shuffle(candidates)
+
+                for para_idx, segment in candidates:
+                    uid = self._generate_unique_id(chapter_urn, para_idx, segment)
+                    if unique and self.state.is_seen(uid):
+                        continue
+
+                    # Translate to English
+                    translation = self.translator.translate(segment)
+
+                    quote = {
+                        "text": segment,
+                        "translation": translation,
+                        "book_urn": book_urn,
+                        "chapter_urn": chapter_urn,
+                        "chapter_title": title,
+                        "paragraph_index": para_idx,
+                        "unique_id": uid,
+                    }
+                    if unique:
+                        self.state.mark_seen(uid, book_urn, chapter_urn, segment)
+                    return quote
+
+            except CtextAuthError as e:
+                # Don't retry auth errors - the book needs an API key
+                print(f"Auth required: {e}", file=sys.stderr)
+                return None
+            except CtextAPIError as e:
+                self._log(f"API error: {e}")
+                if attempt < max_attempts - 1:
+                    continue
+                return None
+            except Exception as e:
+                self._log(f"Unexpected error: {e}")
+                if attempt < max_attempts - 1:
+                    continue
+                return None
+
+        return None
+
+
+def _extract_short_segments(fulltext: List, max_chars: int = 80) -> List[tuple]:
+    """Split paragraphs into short, quotable sentence-level segments.
+
+    Returns list of (paragraph_index, segment_text) tuples.
+    Chinese sentence-ending punctuation: 。！？
+    """
+    # Regex: split AFTER sentence-ending punctuation (keep the punct with the sentence)
+    splitter = re.compile(r"(?<=[。！？])")
+    results = []
+
+    for i, para in enumerate(fulltext):
+        text = para.strip() if isinstance(para, str) else ""
+        if isinstance(para, dict):
+            text = para.get("text", "").strip()
+        if not text or len(text) < 4:
+            continue
+
+        # If the whole paragraph is already short, take it directly
+        if len(text) <= max_chars:
+            results.append((i, text))
+            continue
+
+        # Split into individual sentences
+        sentences = [s.strip() for s in splitter.split(text) if s.strip()]
+        # Filter out tiny fragments (closing brackets etc.)
+        sentences = [s for s in sentences if len(s) >= 4]
+
+        # Individual short sentences
+        for s in sentences:
+            if len(s) <= max_chars:
+                results.append((i, s))
+
+        # Consecutive pairs of sentences (for 2-sentence quotes)
+        for j in range(len(sentences) - 1):
+            pair = sentences[j] + sentences[j + 1]
+            if len(pair) <= max_chars:
+                results.append((i, pair))
+
+    return results
+
+
+def _format_english_quote(quote: Dict, with_chinese: bool = False) -> str:
+    """Format a quote with English translation as the primary text."""
+    # Find book display name
+    book_name = quote["book_urn"]
+    for _key, (urn, display) in AVAILABLE_BOOKS.items():
+        if urn == quote["book_urn"]:
+            book_name = display
+            break
+
+    lines = [f'"{quote["translation"]}"']
+    lines.append(f"  -- {book_name}, {quote['chapter_title']}")
+    if with_chinese:
+        lines.append(f"     {quote['text']}")
+    return "\n".join(lines)
+
 
 # --- CLI Commands ---
 
@@ -543,29 +744,20 @@ def cmd_list(args, fetcher: QuoteFetcher):
     """Handle the 'list' command."""
     print("Available Books:")
     print("=" * 60)
-    
-    # Group by category
-    categories = {
-        "Confucian Classics": ["analects", "mengzi", "xunzi", "daxue", "zhongyong"],
-        "Daoist Texts": ["dao-de-jing", "zhuangzi", "liezi"],
-        "Legalist & Military": ["hanfeizi", "art-of-war", "shangjunshu"],
-        "Mohist": ["mozi"],
-        "Five Classics": ["yijing", "shijing", "liji", "chunqiu-zuozhuan", "shujing"],
-        "Historical Texts": ["shiji", "zhanguoce"],
-        "Other Philosophy": ["guanzi", "yanzi-chunqiu", "lvshi-chunqiu", "huainanzi"],
-    }
-    
-    for category, books in categories.items():
-        print(f"\n📚 {category}:")
-        print("-" * 40)
-        for key in books:
-            if key in AVAILABLE_BOOKS:
-                urn, display = AVAILABLE_BOOKS[key]
-                print(f"  {key:22} {display}")
-    
+
+    print("\n  FREE (no API key needed):")
+    print("-" * 40)
+    for key, (urn, display) in FREE_BOOKS.items():
+        print(f"  {key:22} {display}")
+
+    print("\n  REQUIRES API KEY (ctext.org/tools/subscribe):")
+    print("-" * 40)
+    for key, (urn, display) in AUTH_BOOKS.items():
+        print(f"  {key:22} {display}")
+
     print("\n" + "=" * 60)
     print(f"\nUse --book <key> to select a specific book.")
-    print(f"Example: python main.py random --book analects")
+    print(f"Example: chtext generate --book analects")
     return 0
 
 
@@ -841,28 +1033,89 @@ def cmd_config(args, config: Config):
     return 0
 
 
+def cmd_generate(args, fetcher: QuoteFetcher):
+    """Handle the 'generate' command - produce short English quotes."""
+    count = getattr(args, "count", 1)
+    book_key = getattr(args, "book", None)
+    with_chinese = getattr(args, "with_chinese", False)
+    output_file = getattr(args, "output", None)
+    fmt = getattr(args, "format", "text")
+
+    quotes_collected = []
+
+    if count == 1 and not output_file:
+        # Single quote mode - print directly
+        quote = fetcher.fetch_short_quote(book_key=book_key, unique=True)
+        if not quote:
+            print("Could not find a short quote. Try again or specify a different --book.", file=sys.stderr)
+            return 1
+        if fmt == "json":
+            print(json.dumps(quote, ensure_ascii=False, indent=2))
+        else:
+            print(_format_english_quote(quote, with_chinese=with_chinese))
+        return 0
+
+    # Multi-quote / file mode
+    target = output_file or f"english_quotes_{int(time.time())}.txt"
+    print(f"Generating {count} short English quotes...")
+    if output_file:
+        print(f"Output: {target}")
+    print()
+
+    for i in range(count):
+        quote = fetcher.fetch_short_quote(book_key=book_key, unique=True)
+        if quote:
+            quotes_collected.append(quote)
+            preview = quote["translation"][:60]
+            print(f"  [{len(quotes_collected)}/{count}] {preview}...")
+        else:
+            print(f"  [{i+1}/{count}] (skipped - no unique quote found)")
+
+    if not quotes_collected:
+        print("\nNo quotes could be generated.", file=sys.stderr)
+        return 1
+
+    # Write output
+    with open(target, "w", encoding="utf-8") as f:
+        if fmt == "json":
+            f.write(json.dumps(quotes_collected, ensure_ascii=False, indent=2))
+        else:
+            for q in quotes_collected:
+                f.write(_format_english_quote(q, with_chinese=with_chinese))
+                f.write("\n\n")
+
+    print(f"\nDone! {len(quotes_collected)}/{count} quotes saved to {target}")
+    return 0
+
+
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        prog="ctext",
-        description="Chinese Classics Quote CLI v3.0 - Retrieve wisdom from classical Chinese texts",
+        prog="chtext",
+        description="chtext - Classical Chinese Text Quote Generator",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples:
-  python main.py random                     Get a random quote from any book
-  python main.py random --book dao-de-jing  Get a quote from Dao De Jing
-  python main.py unique                     Get a quote you haven't seen before
-  python main.py batch --count 10           Generate 10 unique quotes to file
-  python main.py search --query "仁"        Search for passages containing "仁"
-  python main.py browse analects            Explore the Analects structure
-  python main.py download analects          Download the Analects to a file
-  python main.py list                       Show available books
-  python main.py stats                      Show your quote history
-  python main.py status                     Show API status
-  python main.py config --show              Show configuration
+examples:
+  chtext generate                          Get one short English quote
+  chtext generate --book dao-de-jing       Short quote from Dao De Jing
+  chtext generate --count 20               Generate 20 quotes to a file
+  chtext generate --with-chinese           Include original Chinese text
+  chtext random                            Random quote (full paragraph)
+  chtext random --book analects            Random Analects quote
+  chtext list                              Show all available books
+  chtext search --query "仁"               Search for a Chinese term
+  chtext browse analects                   Explore book structure
+  chtext config --set-apikey YOUR_KEY      Unlock all books with an API key
+
+full documentation: https://github.com/3D3Q3/chtext
         """
     )
-    
+
+    parser.add_argument(
+        "-V", "--version",
+        action="version",
+        version=f"%(prog)s {__version__}"
+    )
     parser.add_argument(
         "-v", "--verbose",
         action="store_true",
@@ -870,7 +1123,39 @@ Examples:
     )
     
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
-    
+
+    # --- Generate command (short English quotes) ---
+    gen_parser = subparsers.add_parser(
+        "generate",
+        help="Generate short English quotes (1-3 sentences) from classical texts"
+    )
+    gen_parser.add_argument(
+        "--book", "-b",
+        choices=list(AVAILABLE_BOOKS.keys()),
+        help="Specific book to draw from (default: random)"
+    )
+    gen_parser.add_argument(
+        "--count", "-n",
+        type=int,
+        default=1,
+        help="Number of quotes to generate (default: 1)"
+    )
+    gen_parser.add_argument(
+        "--output", "-o",
+        help="Output file (auto-created when --count > 1)"
+    )
+    gen_parser.add_argument(
+        "--with-chinese",
+        action="store_true",
+        help="Include original Chinese text below each quote"
+    )
+    gen_parser.add_argument(
+        "--format", "-f",
+        choices=["text", "json"],
+        default="text",
+        help="Output format (default: text)"
+    )
+
     # --- Random command ---
     random_parser = subparsers.add_parser(
         "random",
@@ -1077,6 +1362,7 @@ Examples:
     
     # Dispatch to appropriate command
     commands = {
+        "generate": lambda: cmd_generate(args, fetcher),
         "random": lambda: cmd_random(args, fetcher),
         "unique": lambda: cmd_unique(args, fetcher),
         "batch": lambda: cmd_batch(args, fetcher),

@@ -1,3 +1,0 @@
-requests>=2.28.0
-deep-translator>=1.11.0
-ctext>=0.1.6
