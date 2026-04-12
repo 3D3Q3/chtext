@@ -5,10 +5,9 @@
 
 
 
-### ♛ chtext
+## ♛ chtext
 *Classical Chinese Quote Generator*
 
--
 
 ## ⚡️ Objective
 
