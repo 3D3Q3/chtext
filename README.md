@@ -7,6 +7,7 @@
 ## ♛ chtext
 
 *Architect:* 3D3Q3
+*Description:* Classical Chinese Quote Generator
 *Domain:* Ancient Wisdom & Terminal Utilities  
 
 
