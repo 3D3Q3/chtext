@@ -3,6 +3,11 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- README roadmap section outlining planned work: a `--no-translate` flag (v1.2) and splitting `cli.py` into focused modules.
+
 ## [1.1.0] - 2026-07-04
 
 ### Fixed

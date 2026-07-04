@@ -181,6 +181,15 @@ For access to the full library:
   - **Translation stability** - English output uses Google Translate via an unofficial interface ([deep-translator](https://github.com/nidhaloff/deep-translator)). It can rate-limit or change without notice. If translation fails, the original Chinese text is still retrievable.
   - **API rate limits** - ctext.org enforces request limits; `chtext` spaces requests automatically, but large `--count` batches take time by design.
 
+### Roadmap
+
+Planned for upcoming releases:
+
+  - **`--no-translate` flag** (v1.2) - skip translation entirely and output only the original classical Chinese, avoiding the Google Translate dependency for users who don't need English.
+  - **Module split** - refactor the single `cli.py` into focused modules (`api.py`, `config.py`, `db.py`, `quotes.py`, `cli.py`) for easier maintenance and library use. No behavior change; planned as its own release so the diff stays reviewable.
+
+Suggestions and contributions welcome via [issues](https://github.com/3D3Q3/chtext/issues).
+
 ### Requirements
 
   - Python 3.9+
