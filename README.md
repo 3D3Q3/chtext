@@ -9,16 +9,21 @@
 *Classical Chinese Quote Generator created by*
 *3D3Q3*
 
+[![CI](https://github.com/3D3Q3/chtext/actions/workflows/ci.yml/badge.svg)](https://github.com/3D3Q3/chtext/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/chtext.svg)](https://pypi.org/project/chtext/)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 
 ### ⚡️ Objective
 
-A command-line gateway to antiquity. `chtext` distills millennia of philosophical insight into short, quotable English translations from classical Chinese texts, delivering them directly to your terminal. Powered by the [Chinese Text Project](https://ctext.org) API, it parses dense historical paragraphs to extract concise, impactful wisdom. Useful, straightforward, and timeless. Needed transmission of ancient knowledge and the ctext tools were beyond my comprehension, apparently.
+A command-line gateway to antiquity. `chtext` distills millennia of philosophical insight into short, quotable English translations from classical Chinese texts, delivering them directly to your terminal. Powered by the [Chinese Text Project](https://ctext.org) API, it parses dense historical paragraphs to extract concise, impactful wisdom. Useful, straightforward, and timeless.
 
 ```bash
 $ chtext generate
 "Knowing the male and guarding the female are the streams of the world."
   -- Dao De Jing (道德經), 道德經
-````
+```
 
 ### 📐 Core Features
 
@@ -35,7 +40,13 @@ $ chtext generate
 #### pip (recommended)
 
 ```bash
-pip install git+[https://github.com/3D3Q3/chtext.git](https://github.com/3D3Q3/chtext.git)
+pip install chtext
+```
+
+Or install the latest development version directly from GitHub:
+
+```bash
+pip install git+https://github.com/3D3Q3/chtext.git
 ```
 
 After installation the `chtext` command is available globally.
@@ -43,7 +54,7 @@ After installation the `chtext` command is available globally.
 #### From source
 
 ```bash
-git clone [https://github.com/3D3Q3/chtext.git](https://github.com/3D3Q3/chtext.git)
+git clone https://github.com/3D3Q3/chtext.git
 cd chtext
 pip install .
 ```
@@ -51,7 +62,7 @@ pip install .
 #### Without installing
 
 ```bash
-git clone [https://github.com/3D3Q3/chtext.git](https://github.com/3D3Q3/chtext.git)
+git clone https://github.com/3D3Q3/chtext.git
 cd chtext
 pip install requests deep-translator
 python -m chtext generate
@@ -165,14 +176,19 @@ For access to the full library:
 5.  Translates to English via Google Translate
 6.  Tracks seen quotes in a local SQLite database to avoid duplicates
 
+### Known Limitations
+
+  - **Translation stability** - English output uses Google Translate via an unofficial interface ([deep-translator](https://github.com/nidhaloff/deep-translator)). It can rate-limit or change without notice. If translation fails, the original Chinese text is still retrievable.
+  - **API rate limits** - ctext.org enforces request limits; `chtext` spaces requests automatically, but large `--count` batches take time by design.
+
 ### Requirements
 
-  - Python 3.8+
+  - Python 3.9+
   - Internet connection (for the ctext.org API and Google Translate)
 
 ### License
 
-This tool's source code is released under the [MIT License](https://www.google.com/search?q=LICENSE).
+This tool's source code is released under the [MIT License](LICENSE).
 
 **Important:** The classical Chinese texts retrieved through this tool come from the [Chinese Text Project](https://ctext.org) and are licensed under [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/). This means the text content:
 
@@ -180,7 +196,7 @@ This tool's source code is released under the [MIT License](https://www.google.c
   - May only be used for **non-commercial** purposes
   - Must be shared under the same license if redistributed
 
-See the [LICENSE](https://www.google.com/search?q=LICENSE) file for full details on both the code and data licenses.
+See the [LICENSE](LICENSE) file for full details on both the code and data licenses.
 
 ### Acknowledgments
 

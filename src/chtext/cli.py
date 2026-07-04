@@ -16,24 +16,17 @@ classical Chinese texts via the Chinese Text Project (ctext.org) API.
 3D3Q3 | 2026
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 import argparse
 import hashlib
-import io
 import json
-import os
 import random
 import sqlite3
 import sys
 import time
 from pathlib import Path
 from typing import Optional, Dict, List, Any
-
-# Fix Windows console encoding for Chinese characters
-if sys.platform == 'win32':
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 import re
 
@@ -67,15 +60,24 @@ class CTextAPI:
         params = self._build_params()
         if extra_params:
             params.update(extra_params)
-        resp = self.session.get(f"{self.base}/{endpoint}", params=params, timeout=30)
+        try:
+            resp = self.session.get(f"{self.base}/{endpoint}", params=params, timeout=30)
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            raise CtextAPIError(f"Network error contacting ctext.org: {e}") from e
         if not resp.text.strip():
             raise CtextAPIError("Empty response from API (possible rate limit)")
-        data = resp.json()
+        try:
+            data = resp.json()
+        except ValueError as e:
+            raise CtextAPIError(
+                "Invalid (non-JSON) response from API (possible rate limit or outage)"
+            ) from e
         if "error" in data:
             code = data["error"].get("code", "")
             desc = data["error"].get("description", "")
             if "authentication" in code.lower() or "authentication" in desc.lower():
-                raise CtextAuthError(f"This text requires an API key. Get one at https://ctext.org/tools/subscribe")
+                raise CtextAuthError("This text requires an API key. Get one at https://ctext.org/tools/subscribe")
             raise CtextAPIError(f"API Error [{code}]: {desc}")
         return data
 
@@ -124,8 +126,26 @@ ctapi = CTextAPI()
 
 
 # --- Configuration & Constants ---
-DB_FILE = "seen_ids.sqlite"
+DATA_DIR = Path.home() / ".chtext"
+DB_FILE = str(DATA_DIR / "seen_ids.sqlite")
 CONFIG_FILE = Path.home() / ".ctext_config.json"
+
+
+def _ensure_data_dir() -> None:
+    """Create the per-user data directory, migrating a legacy CWD database.
+
+    Versions <= 1.0.0 wrote seen_ids.sqlite into the current working
+    directory. If such a file exists and no new-location DB does, adopt it
+    so users keep their quote history.
+    """
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    legacy = Path.cwd() / "seen_ids.sqlite"
+    new = Path(DB_FILE)
+    if legacy.is_file() and not new.exists():
+        try:
+            legacy.replace(new)
+        except OSError:
+            pass  # e.g. cross-device or permission issue; start fresh instead
 REQUEST_DELAY = 1.0  # Seconds between API requests to respect rate limits
 MAX_RETRIES = 15     # Maximum retries for unique quote finding
 
@@ -309,6 +329,8 @@ class StateTracker:
     """SQLite-based state tracking for seen quotes."""
     
     def __init__(self, db_path: str = DB_FILE):
+        if db_path == DB_FILE:
+            _ensure_data_dir()
         self.db_path = db_path
         self._init_db()
 
@@ -766,8 +788,8 @@ def cmd_list(args, fetcher: QuoteFetcher):
         print(f"  {key:22} {display}")
 
     print("\n" + "=" * 60)
-    print(f"\nUse --book <key> to select a specific book.")
-    print(f"Example: chtext generate --book analects")
+    print("\nUse --book <key> to select a specific book.")
+    print("Example: chtext generate --book analects")
     return 0
 
 
@@ -856,7 +878,7 @@ def cmd_browse(args, fetcher: QuoteFetcher):
     
     if book_key not in AVAILABLE_BOOKS:
         print(f"Error: Unknown book '{book_key}'", file=sys.stderr)
-        print(f"Use 'list' command to see available books.")
+        print("Use 'list' command to see available books.")
         return 1
     
     urn, display_name = AVAILABLE_BOOKS[book_key]
@@ -880,14 +902,14 @@ def cmd_browse(args, fetcher: QuoteFetcher):
                 try:
                     sub_data = fetcher.api.get_text(sub_urn)
                     title = sub_data.get("title", sub_urn) if isinstance(sub_data, dict) else sub_urn
-                except:
+                except Exception:
                     title = sub_urn
                 print(f"  {i:3}. {title}")
                 print(f"       URN: {sub_urn}")
             
             if len(data["subsections"]) > args.limit:
                 print(f"\n  ... and {len(data['subsections']) - args.limit} more chapters")
-                print(f"  Use --limit to show more")
+                print("  Use --limit to show more")
         
         elif "fulltext" in data and data["fulltext"]:
             print(f"\n📝 Full Text ({len(data['fulltext'])} paragraphs):")
@@ -934,7 +956,7 @@ def cmd_download(args, fetcher: QuoteFetcher):
                 f.write(f"# URN: {urn}\n")
                 f.write(f"# Downloaded: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n")
                 f.write(text)
-            print(f"✓ Saved as continuous text")
+            print("✓ Saved as continuous text")
         else:
             paragraphs = fetcher.api.get_text_as_paragraphs(urn)
             with open(output_file, 'w', encoding='utf-8') as f:
@@ -1006,7 +1028,7 @@ def cmd_config(args, config: Config):
             print("✓ API key cleared")
         else:
             config.set("api_key", key)
-            print(f"✓ API key set")
+            print("✓ API key set")
         return 0
     
     if args.set_language:
@@ -1098,8 +1120,23 @@ def cmd_generate(args, fetcher: QuoteFetcher):
     return 0
 
 
+def _configure_console_encoding():
+    """Ensure UTF-8 console output on Windows (for Chinese characters).
+
+    Uses reconfigure() so we don't replace sys.stdout globally, which would
+    affect anyone importing chtext as a library.
+    """
+    if sys.platform == "win32":
+        for stream in (sys.stdout, sys.stderr):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except (AttributeError, ValueError):
+                pass  # Non-standard stream (e.g. redirected/captured); leave as-is
+
+
 def main():
     """Main entry point."""
+    _configure_console_encoding()
     parser = argparse.ArgumentParser(
         prog="chtext",
         description="chtext - Classical Chinese Text Quote Generator",
