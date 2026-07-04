@@ -11,7 +11,7 @@
 
 [![CI](https://github.com/3D3Q3/chtext/actions/workflows/ci.yml/badge.svg)](https://github.com/3D3Q3/chtext/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/chtext.svg)](https://pypi.org/project/chtext/)
-[![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 
@@ -183,7 +183,7 @@ For access to the full library:
 
 ### Requirements
 
-  - Python 3.8+
+  - Python 3.9+
   - Internet connection (for the ctext.org API and Google Translate)
 
 ### License

@@ -15,12 +15,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ### Added
 - Test suite (`tests/`) covering the API client, duplicate-tracking database, segment extraction, and configuration — all network access mocked.
-- CI workflow: ruff lint + pytest across Python 3.8–3.13 on every push and pull request.
+- CI workflow: ruff lint + pytest across Python 3.9–3.13 on every push and pull request.
 - This changelog.
 
 ### Changed
 - Package version is now single-sourced from `chtext.cli.__version__` via `pyproject.toml` dynamic metadata.
 - Build system requirement raised to `setuptools>=77` (required by the SPDX `license = "MIT"` expression already in use).
+- Minimum supported Python raised from 3.8 to 3.9: `setuptools>=77` does not install on Python 3.8, which reached end of life in October 2024.
 - Code style cleanup (unused imports, redundant f-strings) enforced by ruff.
 
 ## [1.0.0] - 2026
